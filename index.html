@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis - Autonomous E2E Encrypted Zero-Trust HTTP Gateway</title>
+  <meta name="description" content="Aegis Http is an autonomous, End-to-End Encrypted HTTP gateway architecture utilizing GPG to enable Zero-Trust browser-to-backend communication.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <!-- Background Glowing Blobs -->
+  <div class="glow-bg"></div>
+  <div class="glow-bg-2"></div>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="container">
+      <div class="logo-area">
+        <img src="assets/logo.png" alt="Aegis Logo">
+        <span class="logo-text">Aegis</span>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#playbook">Playbook</a></li>
+          <li><a href="#get-started">Get Started</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+          <button class="lang-btn active" onclick="location.href='index.html'">EN</button>
+          <button class="lang-btn" onclick="location.href='tr.html'">TR</button>
+        </div>
+        <a href="https://github.com/AegisHttp" target="_blank" class="github-btn">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="about">
+    <div class="container hero-content">
+      <span class="badge-version">🛡️ Zero-Trust Architecture</span>
+      <h1>Absolute <span>End-to-End Encryption</span> for standard REST APIs</h1>
+      <p class="hero-desc">
+        Aegis is a zero-trust, end-to-end encrypted HTTP gateway designed to eliminate data-scraping, XSS, and supply-chain tampering. By intercepting standard REST requests at the browser DOM layer and delegating encryption to an isolated OS-level GPG daemon, Aegis guarantees that private keys and plaintext payloads are never exposed to browser memory. Whether protecting sensitive APIs, enforcing OS-level Pinentry challenge-responses, or verifying client identity via Web Key Directory (WKD), Aegis provides a transparent, plug-and-play defense against modern browser-based vulnerabilities.
+      </p>
+      <div class="cta-group">
+        <a href="#get-started" class="btn btn-primary">Get Started</a>
+        <a href="#architecture" class="btn btn-secondary">Explore Architecture</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section id="architecture">
+    <div class="container">
+      <div class="section-header">
+        <h2>Interactive Architecture</h2>
+        <p>Aegis intercepts traditional REST payloads natively, encrypting them locally at the OS level before they ever hit the browser network stack.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="flow-diagram">
+          <!-- Node 1: Browser -->
+          <div class="diagram-node active" data-node="browser">
+            <i class="fas fa-globe"></i>
+            <div class="node-type">Frontend Hook</div>
+            <div class="node-name">Fetch/XHR Proxy</div>
+          </div>
+          
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">DOM Hook</span>
+          </div>
+
+          <!-- Node 2: Extension -->
+          <div class="diagram-node" data-node="extension">
+            <i class="fas fa-puzzle-piece"></i>
+            <div class="node-type">Browser extension</div>
+            <div class="node-name">Aegis Extension</div>
+          </div>
+
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">Native Messaging</span>
+          </div>
+
+          <!-- Node 3: Native Host -->
+          <div class="diagram-node" data-node="native">
+            <i class="fas fa-terminal"></i>
+            <div class="node-type">OS Daemon</div>
+            <div class="node-name">Rust Native Host</div>
+          </div>
+
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">IPC Port</span>
+          </div>
+
+          <!-- Node 4: Keyring -->
+          <div class="diagram-node" data-node="keyring">
+            <i class="fas fa-key"></i>
+            <div class="node-type">OS Secure Keyring</div>
+            <div class="node-name">GPG Keychain</div>
+          </div>
+
+          <div class="diagram-bridge encrypted">
+            <span class="diagram-bridge-label">PGP Payload</span>
+          </div>
+
+          <!-- Node 5: Middleware -->
+          <div class="diagram-node" data-node="middleware">
+            <i class="fas fa-server"></i>
+            <div class="node-type">Backend Layer</div>
+            <div class="node-name">Gateway Middleware</div>
+          </div>
+        </div>
+
+        <div class="diagram-details">
+          <h4 id="details-title">🛡️ Transparent Browser Hook</h4>
+          <p id="details-text">
+            A lightweight proxy injected into the DOM that overrides window.fetch and XMLHttpRequest. It autonomously intercepts REST calls, checks for 'x-gpg-support' headers, and tunnels payloads without modifying frontend logic.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Flow Animation Section -->
+  <section class="animation-section" id="live-flow">
+    <div class="container">
+      <div class="section-header">
+        <h2>Live Encryption Flow</h2>
+        <p>Watch how request envelopes (including sensitive headers like JWT and body data) are securely encrypted and resolved in real-time.</p>
+      </div>
+
+      <div class="animation-toggles" style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <button class="anim-toggle-btn active" id="btn-anim-e2e">
+          <i class="fas fa-lock"></i> E2E HTTP Request Encryption
+        </button>
+        <button class="anim-toggle-btn" id="btn-anim-login">
+          <i class="fas fa-user-shield"></i> GPG Zero-Trust Login Handshake
+        </button>
+      </div>
+
+      <div class="animation-container">
+        <!-- Pinentry OS Dialog Popup -->
+        <div class="pinentry-dialog" id="anim-pinentry">
+          <div class="pinentry-header">
+            <span>Pinentry - GPG Passphrase</span>
+            <span>user@mail.tdl</span>
+          </div>
+          <div class="pinentry-body">
+            <p>Please enter the passphrase to unlock the GPG Secret Key:</p>
+            <input type="password" class="pinentry-input" id="anim-pinentry-input" value="••••••••••" readonly>
+            <div class="pinentry-buttons">
+              <button class="pinentry-btn pinentry-btn-cancel">Cancel</button>
+              <button class="pinentry-btn pinentry-btn-ok">OK</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="animation-stage">
+          <!-- WKD Lookup Server Node -->
+          <div class="wkd-lookup-node" id="anim-wkd-node">
+            <i class="fas fa-search-location"></i>
+            <span>domain.tld WKD Server</span>
+            <div class="wkd-url">.well-known/openpgpkey</div>
+          </div>
+
+          <!-- Client Node -->
+          <div class="stage-node active" id="anim-node-client">
+            <i class="fas fa-laptop-code"></i>
+            <div style="font-weight: 700; font-size: 0.95rem;">Browser DOM</div>
+          </div>
+
+          <!-- Network wire with moving packet -->
+          <div class="stage-wire-wrapper">
+            <div class="stage-wire-line" id="anim-wire-line"></div>
+            
+            <div class="animated-packet" id="anim-packet">
+              <div class="packet-header" id="anim-packet-header">📄 HTTP Request (Plain)</div>
+              <div class="packet-body" id="anim-packet-body">
+                METHOD: POST /api/user
+                Authorization: Bearer eyJhbGciOi...
+                Content-Type: application/json
+
+                {
+                  "ssn": "000-12-3456",
+                  "balance": 92834.12
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Server Node -->
+          <div class="stage-node" id="anim-node-server">
+            <i class="fas fa-server"></i>
+            <div style="font-weight: 700; font-size: 0.95rem;">Backend Server</div>
+          </div>
+        </div>
+
+        <!-- Structured Status Card -->
+        <div class="animation-status-card">
+          <div class="status-header" id="anim-status-title">Client</div>
+          <div class="status-description" id="anim-status-desc">Formulating REST API request in DOM. Session JWT header and body are in plaintext.</div>
+          <div class="status-progress-container">
+            <div class="status-progress-track">
+              <div class="status-progress-bar" id="anim-status-progress" style="width: 12.5%;"></div>
+            </div>
+            <div class="status-progress-text" id="anim-status-progress-text">1/8</div>
+          </div>
+          <!-- Hidden fallback element to keep standard JS selector from crashing -->
+          <div id="anim-status-text" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Simulator Section -->
+  <section class="simulator-section" id="gpg-simulator" style="border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 80px 0; background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Interactive GPG Authentication Simulator</h2>
+        <p>Experience the entire zero-trust environment lifecycle in real-time. Follow the steps to resolve dependency requirements and authenticate securely using local GPG cryptography.</p>
+      </div>
+
+           <!-- Mock Desktop Workspace Container -->
+      <div class="mock-desktop" id="mock-desktop">
+        
+        <!-- Interactive Desktop Workspace Area -->
+        <div class="desktop-workspace">
+          
+          <!-- Window 1: Main Browser Window -->
+          <div class="desktop-window browser-window" id="win-main-browser">
+            <div class="mock-browser-header">
+              <div class="mock-browser-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="mock-browser-address-bar">
+                <i class="fas fa-lock"></i>
+                <span>https://console.acme.corp/login</span>
+              </div>
+              <div class="mock-browser-actions">
+                <!-- Aegis Extension Status Icon in Browser Toolbar -->
+                <div class="extension-icon-wrapper" id="sim-toolbar-ext" title="Aegis HTTP Extension Status">
+                  <img src="assets/icon128.png" alt="Aegis" style="width: 18px; height: 18px; object-fit: contain;">
+                  <span class="status-indicator red"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-browser-viewport">
+              <!-- Website Login Card -->
+              <div class="mock-card-container">
+                <div class="mock-login-card" id="sim-login-card" style="background:#ffffff; color:#1c1c1e; border-radius:12px; padding:24px 20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); width:100%;">
+                  <div class="login-card-header">
+                    <div class="brand-logo"><i class="fas fa-shield-alt"></i> Acme Console</div>
+                    <h2 id="sim-card-title">Sign In</h2>
+                    <p id="sim-card-description">Zero-Trust developer access gateway.</p>
+                  </div>
+                  <div class="login-form-group">
+                    <label>Email Address</label>
+                    <input type="text" class="login-input" value="developer@acme.corp" readonly>
+                  </div>
+                  <div class="login-form-group" style="margin-bottom:14px;">
+                    <label>Password</label>
+                    <input type="password" class="login-input" value="••••••••••••" readonly>
+                  </div>
+                  <button class="btn-login-submit" disabled>Sign In</button>
+                  <div class="login-divider"><span>or secure via Aegis</span></div>
+                  <button class="btn-gpg-login" id="btn-sim-action">
+                    <i class="fas fa-key"></i> Sign in with GPG Key
+                  </button>
+                </div>
+
+                <!-- Alert Overlay for Missing Extension (Constrained to Card) -->
+                <div class="mock-alert-overlay" id="sim-alert-extension">
+                  <div class="mock-alert-box">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Aegis HTTP Extension Not Found! * <span class="required-badge">Required</span></h3>
+                    <p>The Aegis web extension is needed to hook network requests and coordinate key discovery. Please install the browser extension to proceed.</p>
+                    <button class="btn-primary" id="btn-install-ext" style="background: #d93856; border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer;">Install Extension</button>
+                  </div>
+                </div>
+
+                <!-- Alert Overlay for Missing Native Host (Constrained to Card) -->
+                <div class="mock-alert-overlay" id="sim-alert-native">
+                  <div class="mock-alert-box">
+                    <div class="alert-icon"><i class="fas fa-plug"></i></div>
+                    <h3>Aegis HTTP Native Host Missing! * <span class="required-badge">Required</span></h3>
+                    <p>The extension is installed, but the background Rust Native Messaging host is not running on your OS. It is required to safely interact with your local GPG binary.</p>
+                    <button class="btn-primary" id="btn-install-native" style="background: #d93856; border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer;">Install Native Host (Rust Daemon)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pinentry Dialog Overlay (Centered in Viewport) -->
+              <div class="sim-pinentry-dialog" id="sim-pinentry-box">
+                <div class="sim-pinentry-header">
+                  <span>PINENTRY - GPG PASSPHRASE</span>
+                  <span class="user-id">USER@MAIL.TDL</span>
+                </div>
+                <div class="sim-pinentry-body">
+                  <p>Please enter the passphrase to unlock the GPG Secret Key:</p>
+                  <input type="password" id="sim-pinentry-input-field" class="sim-pinentry-input" readonly placeholder="">
+                  <div class="sim-pinentry-buttons">
+                    <button class="btn-cancel" id="btn-sim-pin-cancel">Cancel</button>
+                    <button class="btn-ok" id="btn-sim-pin-ok">OK</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Success Modal Overlay -->
+              <div class="mock-alert-overlay" id="sim-success-box">
+                <div class="mock-alert-box success">
+                  <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+                  <h3>Login Successful!</h3>
+                  <p>The signature has been verified by the Caddy Gateway. An encrypted session JWT has been issued to the client.</p>
+                  <div class="sim-json-output">
+                    <pre style="margin:0;"><code style="white-space: pre-wrap;">{
+  "status": "success",
+  "sessionToken": "gpg_session_92834b...",
+  "user": "user@mail.tdl"
+}</code></pre>
+                  </div>
+                  <button class="btn-primary" id="btn-sim-reset" style="background: var(--gradient-primary); border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer; margin-top: 15px;">Reset Simulator</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Window 2: Chrome Web Store Window (Separate Web Browser) -->
+          <div class="desktop-window store-window" id="win-web-store">
+            <div class="mock-browser-header">
+              <div class="mock-browser-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="mock-browser-address-bar">
+                <i class="fas fa-lock"></i>
+                <span>https://chrome.google.com/webstore/detail/aegis-http</span>
+              </div>
+            </div>
+            <div class="store-window-body" style="background: #f8f9fa; color: #202124; flex-grow: 1; padding: 16px; overflow-y: auto;">
+              <div class="extension-detail-row" style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                <img src="assets/icon128.png" alt="Aegis" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain;">
+                <div class="ext-info-block" style="text-align: left;">
+                  <h4 style="margin:0; font-size:1rem; color:#202124;">Aegis HTTP</h4>
+                  <p class="ext-author" style="margin:2px 0 0 0; font-size:0.75rem; color:#5f6368;">Offered by: aegis-http.org</p>
+                </div>
+                <button class="btn-store-add" id="btn-store-add-sim" style="background: #1a73e8; color: #fff; border: none; font-weight: 600; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: auto; font-size:0.8rem;">Add to Chrome</button>
+              </div>
+              <div class="store-screenshots" style="background:#f1f3f4; border:1px solid #dadce0; border-radius:6px; height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
+                <i class="fas fa-image" style="font-size: 1.5rem; color: #ced4da;"></i>
+                <span style="color: #70757a; font-size: 0.75rem;">Aegis Secure E2E Tunneling Demo</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Window 3: Terminal Window (OS Level Window) -->
+          <div class="desktop-window terminal-window" id="win-terminal">
+            <div class="os-window-header">
+              <div class="os-window-dots">
+                <span class="dot-red" style="background:#ff5f56; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-yellow" style="background:#ffbd2e; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-green" style="background:#27c93f; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+              </div>
+              <div class="os-window-title">bash - setup-native-host.sh</div>
+              <div style="width: 24px;"></div>
+            </div>
+            <div class="terminal-window-body" id="sim-terminal-text" style="background: #150115; color: #4af626; font-family: 'Courier New', Courier, monospace; padding: 12px; flex-grow: 1; font-size: 0.75rem; line-height: 1.4; overflow-y: auto; text-align: left; height: calc(100% - 30px);">
+              <!-- Lines printed dynamically -->
+            </div>
+          </div>
+
+          <!-- Window 4: Ubuntu Software Center Window (OS Level Window) -->
+          <div class="desktop-window ubuntu-window" id="win-ubuntu-software">
+            <div class="os-window-header ubuntu-header" style="background: #3d3d3d; border-bottom: 1px solid #222;">
+              <div class="os-window-dots">
+                <span class="dot-red" style="background:#ff5f56; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-yellow" style="background:#ffbd2e; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-green" style="background:#27c93f; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+              </div>
+              <div class="os-window-title" style="color: #fff;">Ubuntu Software</div>
+              <div style="width: 24px;"></div>
+            </div>
+            <div class="ubuntu-window-body" style="background: #2c2c2e; padding: 15px; color: #fff; text-align: left; height: calc(100% - 30px); display: flex; flex-direction: column;">
+              <div class="ubuntu-store-card" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                <img src="assets/icon128.png" alt="Aegis" style="width: 36px; height: 36px; border-radius: 6px; object-fit: contain;">
+                <div class="ubuntu-store-info">
+                  <h4 style="margin: 0; font-size: 0.9rem; color: #fff;">aegis-native-host</h4>
+                  <p style="margin: 2px 0 0 0; font-size: 0.7rem; color: #a9a9a9;">Publisher: Aegis Project</p>
+                </div>
+              </div>
+              <div style="font-size: 0.75rem; color: #ddd; margin-bottom: 10px;">GPG Native Messaging Daemon for secure browser communication.</div>
+              <button class="btn-ubuntu-install" id="btn-ubuntu-install-sim" style="background: #e95420; color: #fff; border: none; padding: 6px 12px; font-weight: 600; border-radius: 4px; cursor: pointer; font-size: 0.75rem; align-self: flex-start;">Install</button>
+              <div class="ubuntu-progress-track" id="ubuntu-progress-track" style="margin-top: 15px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; display: none; overflow: hidden;">
+                <div class="ubuntu-progress-bar" id="ubuntu-progress-bar" style="background: #e95420; width: 0%; height: 100%; transition: width 0.2s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Mock Mouse Cursor on Desktop Level -->
+          <div id="mock-cursor" class="mock-cursor" style="left: 45%; top: 25%;"><i class="fas fa-mouse-pointer"></i></div>
+        </div>
+
+        <!-- Simulator Video Controls player bar -->
+        <div class="sim-video-controls">
+          <button class="ctrl-btn" id="ctrl-play-pause" title="Play/Pause"><i class="fas fa-pause"></i></button>
+          <button class="ctrl-btn" id="ctrl-restart" title="Restart"><i class="fas fa-redo"></i></button>
+          <div class="ctrl-progress-container" id="ctrl-progress-container">
+            <div class="ctrl-progress-track">
+              <div class="ctrl-progress-bar" id="ctrl-progress-bar"></div>
+            </div>
+          </div>
+          <span class="ctrl-timer" id="ctrl-timer">00:00 / 00:33</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ecosystem Section -->
+  <section id="ecosystem" class="ecosystem-section" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ecosystem & Repositories</h2>
+        <p>Explore the components that make up the Aegis HTTP end-to-end encrypted architecture.</p>
+      </div>
+
+      <div class="grid-3">
+        <!-- Card 1 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+            <h3>Extensions & Hosts</h3>
+          </div>
+          <p>Browser integrations intercepting traffic and bridging cryptography to the Operating System's local GPG core daemon.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>google-chrome-extension</span>
+              <a href="https://github.com/AegisHttp/google-chrome-extension" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>firefox-extension</span>
+              <a href="https://github.com/AegisHttp/firefox-extension" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>native-host-rust</span>
+              <a href="https://github.com/AegisHttp/native-host-rust" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-cubes"></i></div>
+            <h3>Frontend SDKs</h3>
+          </div>
+          <p>Plug-and-play libraries that verify whether the Aegis extension is installed, manage connection configurations, and retrieve client status in a zero-configuration setup.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>aegis-ts-sdk</span>
+              <a href="https://github.com/AegisHttp/aegis-ts-sdk" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>flutter</span>
+              <a href="https://github.com/AegisHttp/flutter" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+            <h3>Backend Middleware</h3>
+          </div>
+          <p>Plug-and-play modules running decryption filters on popular framework servers to reconstruct plaintext envelopes.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>gofiber-aegis-http</span>
+              <a href="https://github.com/AegisHttp/gofiber-aegis-http" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>rust-tokio</span>
+              <a href="https://github.com/AegisHttp/rust-tokio" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-flask</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-django</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-fastapi</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>express-middleware</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-server"></i></div>
+            <h3>Web Servers</h3>
+          </div>
+          <p>Reverse-proxy gateway extensions providing transparent E2E decryption/encryption at the edge network layer.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>caddy-module</span>
+              <a href="https://github.com/AegisHttp/caddy-module" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>nginx-module</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>apache-module</span>
+              <span class="coming-soon-badge">coming soon</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security Section -->
+  <section id="security">
+    <div class="container">
+      <div class="section-header">
+        <h2>Security Vulnerabilities Solved</h2>
+        <p>Aegis provides solid cryptographic mitigations against common attack vectors threatening modern web architectures.</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 50px;">
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-danger);"><i class="fas fa-user-secret"></i></div>
+            <h3>XSS (Cross-Site Scripting) Key Theft</h3>
+          </div>
+          <p>In standard web wallets or crypto solutions, private keys reside in localStorage or JS Heap Memory. An attacker exploiting an XSS bug can extract these keys instantly. Aegis isolates keys inside the OS keyring, keeping them completely out of reach from malicious scripts.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-warning);"><i class="fas fa-compress-alt"></i></div>
+            <h3>Man-in-the-Middle (MitM) & TLS Stripping</h3>
+          </div>
+          <p>Even if corporate firewalls inspect TLS certificates, or bad actors perform SSL stripping, payloads routed via Aegis travel as armored AES-256 PGP blocks. The data can only be decrypted by the final backend server holding the matching server key.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-accent);"><i class="fas fa-sync-alt"></i></div>
+            <h3>Replay Attacks</h3>
+          </div>
+          <p>Outbound payloads are sealed with an ISO8601 Temporal Timestamp and an unpredictable UUID nonce (`_gpg_nonce`). The backend caches used nonces within a short TTL cache, automatically rejecting repeated identical requests.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-success);"><i class="fas fa-database"></i></div>
+            <h3>DOM Decryption Oracle Attacks</h3>
+          </div>
+          <p>To prevent malicious XSS code from leveraging the extension to silently decrypt data in the background, Aegis uses memory-bound, short-lived `x-gpg-session-token` strings generated only upon manual physical user approval (like a OS pinentry challenge).</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-primary);"><i class="fas fa-file-signature"></i></div>
+            <h3>Full HTTP Header & JWT Protection</h3>
+          </div>
+          <p>Unlike standard application-level encryption that only protects the JSON body, Aegis encrypts the entire HTTP envelope (including custom headers like <code>Authorization: Bearer JWT</code>). This ensures session tokens are completely secure from corporate proxy inspection and passive snooping.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-accent);"><i class="fas fa-user-shield"></i></div>
+            <h3>Malicious Plugin & Background Scraping Resistance</h3>
+          </div>
+          <p>If an infected extension, malware, or local Trojan attempts to forge background requests using the victim's cookies, or if an attacker inspects connections via Developer Tools, they cannot intercept the plaintext. Because Aegis encrypts everything end-to-end, all transit payloads and Network tab logs remain strictly locked GPG ciphertext. Decryption only occurs securely outside the browser context.</p>
+        </div>
+      </div>
+
+      <!-- Comparative Table -->
+      <div class="section-header" style="margin-top: 80px; margin-bottom: 40px;">
+        <h3>Comparison Matrix</h3>
+        <p>How Aegis compares to traditional REST security systems</p>
+      </div>
+
+      <div class="matrix-wrapper">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Security Vector</th>
+              <th>Traditional HTTPS / TLS</th>
+              <th>HTTPS + Frontend JS Crypto</th>
+              <th class="matrix-highlight">Aegis GPG Gateway</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>MitM & TLS Proxy Inspection</td>
+              <td><i class="fas fa-times cross"></i> Vulnerable</td>
+              <td><i class="fas fa-check check"></i> Immune</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Immune</td>
+            </tr>
+            <tr>
+              <td>XSS Private Key Theft</td>
+              <td>N/A (No Client Keys)</td>
+              <td><i class="fas fa-times cross"></i> High Risk (LocalStorage/JS memory)</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Immune (Isolated in OS Keyring)</td>
+            </tr>
+            <tr>
+              <td>Supply Chain (NPM) Interception</td>
+              <td><i class="fas fa-times cross"></i> Vulnerable</td>
+              <td><i class="fas fa-times cross"></i> Vulnerable (Script Manipulation)</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Protected (Intercepted at Network Port)</td>
+            </tr>
+            <tr>
+              <td>Decryption Oracle Mitigation</td>
+              <td>N/A</td>
+              <td><i class="fas fa-times cross"></i> No</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Yes (Memory-Bound Interaction Tokens)</td>
+            </tr>
+            <tr>
+              <td>GET / DELETE URL Leak Protection</td>
+              <td><i class="fas fa-times cross"></i> Exposed in Logs</td>
+              <td><i class="fas fa-times cross"></i> Exposed in Logs</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Hidden (Transparent Tunneling via POST /)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Playbook Code Section -->
+  <section id="playbook" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Developer Playbook</h2>
+        <p>Integrate Aegis into your current workflow. The frontend writes standard fetch commands while backend middlewares process incoming envelopes transparently.</p>
+      </div>
+      <div class="playbook-container">
+        <div class="playbook-tabs">
+          <div class="tab-group-title">Client-Side SDK</div>
+          <button class="playbook-tab active" data-tab="js-sdk">
+            <i class="fab fa-js"></i> TypeScript/JS SDK
+          </button>
+          
+          <div class="tab-group-title">Server Middleware</div>
+          <button class="playbook-tab" data-tab="gofiber">
+            <i class="fab fa-golang"></i> GoFiber Middleware
+          </button>
+          <button class="playbook-tab" data-tab="rust-axum">
+            <i class="fas fa-cubes"></i> Axum / Tokio (Rust)
+          </button>
+
+          <div class="tab-group-title">Gateway / Web Server</div>
+          <button class="playbook-tab" data-tab="caddy">
+            <i class="fas fa-server"></i> Caddy Gateway
+          </button>
+        </div>
+
+        <div class="playbook-content">
+          <!-- Panel 1: JS SDK -->
+          <div class="playbook-panel active" id="js-sdk">
+            <h3>TypeScript Client Initialization</h3>
+            <p>Setup the dynamic DOM proxy to automatically capture calls and manage the session lifecycle.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">aegis-app.ts</div>
+                <button class="btn-copy">Copy</button>
+              </div>
+              <pre><code class="language-typescript">import { AegisClient } from 'aegis-ts-sdk';
+
+// Initialize the Aegis client hook
+const aegis = new AegisClient({
+  serverPublicKeyUrl: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xServerKeyID',
+  forceTunneling: true // Encapsulates GET/DELETE headers & endpoints into encrypted POST bodies
+});
+
+// Autonomously authenticate via OS keyring GPG signature
+await aegis.login();
+
+// Write standard fetch calls - payloads are encrypted transparently!
+const response = await fetch('/api/secure-profile', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    SSN: "000-12-3456",
+    balance: 92834.12
+  })
+});
+
+const data = await response.json();
+console.log('Decrypted response from server:', data);</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 2: GoFiber -->
+          <div class="playbook-panel" id="gofiber">
+            <h3>GoFiber Middleware Setup</h3>
+            <p>Apply the GPG decryption filter globally. Standard Go controllers process plaintext requests directly.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">main.go</div>
+                <button class="btn-copy">Copy</button>
+              </div>
+              <pre><code class="language-go">package main
+
+import (
+	"github.com/AegisHttp/gofiber-aegis-http"
+	"github.com/gofiber/fiber/v2"
+)
+
+func main() {
+	app := fiber.New()
+
+	// Inject Aegis Decryption Middleware globally
+	app.Use(aegis.New(aegis.Config{
+		PrivateKeyRingPath: "/home/server/.gnupg/secring.gpg",
+		PrivateKeyPassphrase: "SuperSecretBackendPassphrase",
+		KeyserverPublish: true, // Auto publishes server public key to Ubuntu keyservers
+	}))
+
+	// Your standard routing works out of the box with decrypted JSON payload
+	app.Post("/api/secure-profile", func(c *fiber.Ctx) error {
+		type RequestData struct {
+			SSN     string  `json:"SSN"`
+			Balance float64 `json:"balance"`
+		}
+
+		var req RequestData
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+
+		return c.JSON(fiber.Map{
+			"status": "success",
+			"message": "Secure payload processed",
+		})
+	})
+
+	app.Listen(":8080")
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 3: Rust Axum -->
+          <div class="playbook-panel" id="rust-axum">
+            <h3>Rust Tokio / Axum Handler</h3>
+            <p>Utilize GPG decrypt helpers inside Rust Tokio applications for secure high-throughput services.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">main.rs</div>
+                <button class="btn-copy">Copy</button>
+              </div>
+              <pre><code class="language-rust">use axum::{routing::post, Json, Router};
+use aegis_tokio::DecryptLayer;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+struct ProfileRequest {
+    ssn: String,
+    balance: f64,
+}
+
+#[derive(Serialize)]
+struct ProfileResponse {
+    status: String,
+}
+
+async fn handle_profile(Json(payload): Json<ProfileRequest>) -> Json<ProfileResponse> {
+    // Process standard decrypted payload safely
+    Json(ProfileResponse {
+        status: format!("Processed secure profile for SSN length: {}", payload.ssn.len()),
+    })
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/api/secure-profile", post(handle_profile))
+        .layer(DecryptLayer::new("/etc/aegis/server_private.key"));
+
+    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 4: Caddy Gateway -->
+          <div class="playbook-panel" id="caddy">
+            <h3>Caddy Gateway Configuration</h3>
+            <p>Directly decrypt requests and encrypt responses at the proxy layer. Make any language backend Zero-Trust instantly.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">Caddyfile</div>
+                <button class="btn-copy">Copy</button>
+              </div>
+              <pre><code class="language-nginx">{
+    order aegis_http before reverse_proxy
+}
+
+:8080 {
+    # Route block containing Aegis handler
+    route {
+        aegis_http {
+            challenge_path /api/challenge
+            login_path /api/login
+            decrypt_requests
+            encrypt_responses
+            require_keyserver
+            check_revocation
+            tunneling_enabled
+            server_email "api@example.com"
+            server_passphrase "secret"
+            server_private_key_path "/etc/caddy/server_private.asc"
+            server_public_key_path "/etc/caddy/server_public.asc"
+        }
+
+        # Seamlessly forwards decrypted traffic to any standard backend
+        reverse_proxy localhost:3000
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started / Run Section -->
+  <section id="get-started">
+    <div class="container">
+      <div class="section-header">
+        <h2>Quick Start & Setup</h2>
+        <p>Follow these steps to configure your environment and run Aegis locally.</p>
+      </div>
+
+      <div class="steps-container">
+        <!-- Step 1 -->
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>Install & Register the Native Messaging Host</h3>
+            <p>The native host acts as the secure bridge between the browser extension and your OS GPG keyring. Choose your platform installer:</p>
+            
+            <div style="margin-top: 1rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+              <div>
+                <strong><i class="fab fa-windows"></i> Windows:</strong> Download the pre-built <code>aegis-native-host.exe</code> installer from the <a href="https://github.com/AegisHttp/pre-native-host/releases" target="_blank">official Releases page</a>.
+              </div>
+              <div>
+                <strong><i class="fab fa-apple"></i> macOS:</strong> Install via Homebrew tap:
+                <div class="code-window" style="margin-top: 6px;">
+                  <div class="code-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <div class="code-filename">Homebrew</div>
+                    <button class="btn-copy">Copy</button>
+                  </div>
+                  <pre><code>brew install aegishttp/tap/aegis-native-host</code></pre>
+                </div>
+              </div>
+              <div>
+                <strong><i class="fab fa-linux"></i> Linux:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 6px; list-style-type: square; color: var(--text-secondary); display: flex; flex-direction: column; gap: 1rem;">
+                  <li><strong>Ubuntu / Debian (APT PPA):</strong> Install official PPA:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Copy</button>
+                      </div>
+                      <pre><code class="language-bash">sudo add-apt-repository ppa:aegis-http/stable
+sudo apt update
+sudo apt install aegis-native-host</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Snap Store (Any distro):</strong> Install via Snap:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Copy</button>
+                      </div>
+                      <pre><code class="language-bash">sudo snap install aegis-native-host</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Arch Linux (AUR):</strong> Install AUR binary:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Copy</button>
+                      </div>
+                      <pre><code class="language-bash">yay -S aegis-native-host-bin</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Compile from Source:</strong>
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Copy</button>
+                      </div>
+                      <pre><code class="language-bash">git clone https://github.com/AegisHttp/native-host-rust.git
+cd native-host-rust
+chmod +x install.sh
+./install.sh</code></pre>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>Install the Browser Extension</h3>
+            <p>Download and install the official <strong>Aegis HTTP</strong> extension directly from the browser web stores:</p>
+            <ul style="margin-left: 1.5rem; list-style-type: square; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <li><strong>Chrome / Chromium-based Browsers:</strong> Install via the <a href="https://chrome.google.com/webstore/detail/aegis-http" target="_blank">Chrome Web Store</a> (search for "Aegis HTTP").</li>
+              <li><strong>Firefox Browser:</strong> Install via <a href="https://addons.mozilla.org/firefox/addon/aegis-http" target="_blank">Firefox Browser Add-ons</a> (search for "Aegis HTTP").</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>Start Backend & Frontend Services</h3>
+            <p>Launch the example GoFiber server and spin up the frontend React workspace:</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">terminal</div>
+                <button class="btn-copy">Copy</button>
+              </div>
+              <pre><code># Term 1: Run Backend
+cd gofiber-aegis-http
+go run main.go
+
+# Term 2: Run React UI demo
+cd ../react-frontend
+npm install
+npm run dev</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Special Thanks Section -->
+  <section class="thanks-section" style="padding: 45px 0; border-top: 1px solid var(--border-color); background: var(--bg-primary); text-align: center;">
+    <div class="container">
+      <h3 style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px;">Special Thanks</h3>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 4rem; flex-wrap: wrap;">
+        <a href="https://oyd.org.tr/" target="_blank" style="display: flex; align-items: center; filter: grayscale(100%) opacity(0.7); transition: all 0.3s ease;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%) opacity(0.7)'">
+          <img src="https://oyd.org.tr/oyd_logo.svg" alt="Özgür Yazılım Derneği" style="height: 44px; width: auto;">
+        </a>
+        <a href="https://hackerspace.ist/" target="_blank" style="display: flex; align-items: center; filter: grayscale(100%) opacity(0.7); transition: all 0.3s ease;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%) opacity(0.7)'">
+          <img src="https://hackerspace.ist/hsist.svg" alt="Hackerspace İstanbul" style="height: 44px; width: auto; filter: brightness(0) invert(1);">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="#about">About</a>
+        <a href="#architecture">Architecture</a>
+        <a href="#security">Security</a>
+        <a href="#playbook">Playbook</a>
+        <a href="https://github.com/AegisHttp" target="_blank">GitHub</a>
+      </div>
+      <p>&copy; 2026 Aegis Project. Released under the AGPL License.</p>
+    </div>
+  </footer>
+
+  <!-- Logic script -->
+  <script src="assets/app.js"></script>
+  <!-- Syntax Highlighting Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>

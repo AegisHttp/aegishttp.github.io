@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aegis - Otonom Uçtan Uca Şifreli Sıfır-Güven HTTP Ağ Geçidi</title>
+  <meta name="description" content="Aegis Http, tarayıcı ile backend arasında standart GPG kullanarak otonom, Uçtan Uca Şifreli (E2E) Sıfır-Güven iletişimi sağlayan bir ağ geçidi mimarisidir.">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+  <!-- Background Glowing Blobs -->
+  <div class="glow-bg"></div>
+  <div class="glow-bg-2"></div>
+
+  <!-- Header Navigation -->
+  <header>
+    <div class="container">
+      <div class="logo-area">
+        <img src="assets/logo.png" alt="Aegis Logo">
+        <span class="logo-text">Aegis</span>
+      </div>
+      <nav>
+        <ul>
+          <li><a href="#about">Hakkında</a></li>
+          <li><a href="#architecture">Mimari</a></li>
+          <li><a href="#security">Güvenlik</a></li>
+          <li><a href="#playbook">Kod Kılavuzu</a></li>
+          <li><a href="#get-started">Kurulum</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <!-- Language Switcher -->
+        <div class="lang-switcher">
+          <button class="lang-btn" onclick="location.href='index.html'">EN</button>
+          <button class="lang-btn active" onclick="location.href='tr.html'">TR</button>
+        </div>
+        <a href="https://github.com/AegisHttp" target="_blank" class="github-btn">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="about">
+    <div class="container hero-content">
+      <span class="badge-version">🛡️ Sıfır-Güven Mimarisi</span>
+      <h1>Standart REST API'ler için <span>Mutlak Uçtan Uca Şifreleme</span></h1>
+      <p class="hero-desc">
+        Aegis; veri sızıntılarını, XSS saldırılarını ve üçüncü parti kütüphane tedarik zinciri ihlallerini tamamen engellemek için tasarlanmış sıfır-güven (zero-trust) tabanlı bir uçtan uca şifreleme geçididir. Standart REST isteklerini tarayıcı DOM katmanında yakalayıp, şifreleme işlemlerini tarayıcı belleğinin dışındaki izole bir işletim sistemi seviyesi GPG servisine (daemon) devrederek gizli anahtarların ve ham verilerin çalınmasını imkansız kılar. Hassas API'lerin korunması, işletim sistemi seviyesinde Pinentry doğrulama döngülerinin çalıştırılması ve WKD (Web Key Directory) üzerinden kimlik doğrulaması gibi tüm bu kabiliyetleri, mevcut kod yapınızda hiçbir değişiklik gerektirmeyen tak-çalıştır bir yapıyla sunar.
+      </p>
+      <div class="cta-group">
+        <a href="#get-started" class="btn btn-primary">Başlarken</a>
+        <a href="#architecture" class="btn btn-secondary">Mimariyi İncele</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture Section -->
+  <section id="architecture">
+    <div class="container">
+      <div class="section-header">
+        <h2>İnteraktif Mimari</h2>
+        <p>Aegis, geleneksel REST isteklerini otonom olarak yakalar ve tarayıcının ağ katmanına ulaşmadan önce yerel düzeyde şifreler.</p>
+      </div>
+
+      <div class="diagram-container">
+        <div class="flow-diagram">
+          <!-- Node 1: Browser -->
+          <div class="diagram-node active" data-node="browser">
+            <i class="fas fa-globe"></i>
+            <div class="node-type">Ön Yüz Kancası</div>
+            <div class="node-name">Fetch/XHR Proxy</div>
+          </div>
+          
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">DOM Kancası</span>
+          </div>
+
+          <!-- Node 2: Extension -->
+          <div class="diagram-node" data-node="extension">
+            <i class="fas fa-puzzle-piece"></i>
+            <div class="node-type">Tarayıcı Eklentisi</div>
+            <div class="node-name">Aegis Eklentisi</div>
+          </div>
+
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">Native Messaging</span>
+          </div>
+
+          <!-- Node 3: Native Host -->
+          <div class="diagram-node" data-node="native">
+            <i class="fas fa-terminal"></i>
+            <div class="node-type">İşletim Sistemi Servisi</div>
+            <div class="node-name">Rust Native Host</div>
+          </div>
+
+          <div class="diagram-bridge">
+            <span class="diagram-bridge-label">IPC Portu</span>
+          </div>
+
+          <!-- Node 4: Keyring -->
+          <div class="diagram-node" data-node="keyring">
+            <i class="fas fa-key"></i>
+            <div class="node-type">Güvenli Anahtarlık</div>
+            <div class="node-name">GPG Anahtarlığı</div>
+          </div>
+
+          <div class="diagram-bridge encrypted">
+            <span class="diagram-bridge-label">PGP Paketi</span>
+          </div>
+
+          <!-- Node 5: Middleware -->
+          <div class="diagram-node" data-node="middleware">
+            <i class="fas fa-server"></i>
+            <div class="node-type">Sunucu Katmanı</div>
+            <div class="node-name">Ağ Geçidi Middleware</div>
+          </div>
+        </div>
+
+        <div class="diagram-details">
+          <h4 id="details-title">🛡️ Şeffaf Tarayıcı Yakalayıcısı</h4>
+          <p id="details-text">
+            DOM ortamına enjekte edilen hafif bir vekil (proxy) kütüphane. window.fetch ve XMLHttpRequest metodlarını gözetleyerek, sunucudan 'x-gpg-support' başlığı geldiği anda istekleri otonom olarak yakalar ve şifreleme tüneline sokar.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Flow Animation Section -->
+  <section class="animation-section" id="live-flow">
+    <div class="container">
+      <div class="section-header">
+        <h2>Canlı Şifreleme Akışı</h2>
+        <p>İstek zarflarının (JWT gibi hassas başlıklar ve veri gövdesi dahil) gerçek zamanlı olarak nasıl güvenli bir şekilde şifrelenip çözüldüğünü izleyin.</p>
+      </div>
+
+      <div class="animation-toggles" style="display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+        <button class="anim-toggle-btn active" id="btn-anim-e2e">
+          <i class="fas fa-lock"></i> E2E HTTP İstek Şifreleme
+        </button>
+        <button class="anim-toggle-btn" id="btn-anim-login">
+          <i class="fas fa-user-shield"></i> GPG Sıfır-Güven Giriş (Login)
+        </button>
+      </div>
+
+      <div class="animation-container">
+        <!-- Pinentry OS Dialog Popup -->
+        <div class="pinentry-dialog" id="anim-pinentry">
+          <div class="pinentry-header">
+            <span>Pinentry - GPG Parolası Girin</span>
+            <span>user@mail.tdl</span>
+          </div>
+          <div class="pinentry-body">
+            <p>GPG Gizli Anahtarını açmak için lütfen parolayı girin:</p>
+            <input type="password" class="pinentry-input" id="anim-pinentry-input" value="••••••••••" readonly>
+            <div class="pinentry-buttons">
+              <button class="pinentry-btn pinentry-btn-cancel">İptal</button>
+              <button class="pinentry-btn pinentry-btn-ok">Tamam</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="animation-stage">
+          <!-- WKD Lookup Server Node -->
+          <div class="wkd-lookup-node" id="anim-wkd-node">
+            <i class="fas fa-search-location"></i>
+            <span>domain.tld WKD Sunucusu</span>
+            <div class="wkd-url">.well-known/openpgpkey</div>
+          </div>
+
+          <!-- Client Node -->
+          <div class="stage-node active" id="anim-node-client">
+            <i class="fas fa-laptop-code"></i>
+            <div style="font-weight: 700; font-size: 0.95rem;">Tarayıcı DOM</div>
+          </div>
+
+          <!-- Network wire with moving packet -->
+          <div class="stage-wire-wrapper">
+            <div class="stage-wire-line" id="anim-wire-line"></div>
+            
+            <div class="animated-packet" id="anim-packet">
+              <div class="packet-header" id="anim-packet-header">📄 HTTP İsteği (Plain)</div>
+              <div class="packet-body" id="anim-packet-body">
+                METOT: POST /api/user
+                Authorization: Bearer eyJhbGciOi...
+                Content-Type: application/json
+
+                {
+                  "ssn": "000-12-3456",
+                  "bakiye": 92834.12
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Server Node -->
+          <div class="stage-node" id="anim-node-server">
+            <i class="fas fa-server"></i>
+            <div style="font-weight: 700; font-size: 0.95rem;">Arka Uç Sunucusu</div>
+          </div>
+        </div>
+
+        <!-- Structured Status Card -->
+        <div class="animation-status-card">
+          <div class="status-header" id="anim-status-title">İstemci</div>
+          <div class="status-description" id="anim-status-desc">REST API isteği DOM'da hazırlanıyor. JWT ve veri gövdesi henüz şeffaf (plaintext).</div>
+          <div class="status-progress-container">
+            <div class="status-progress-track">
+              <div class="status-progress-bar" id="anim-status-progress" style="width: 12.5%;"></div>
+            </div>
+            <div class="status-progress-text" id="anim-status-progress-text">1/8</div>
+          </div>
+          <!-- Hidden fallback element to keep standard JS selector from crashing -->
+          <div id="anim-status-text" style="display: none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Simulator Section -->
+  <section class="simulator-section" id="gpg-simulator" style="border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); padding: 80px 0; background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Etkileşimli GPG Kimlik Doğrulama Simülatörü</h2>
+        <p>Sıfır-güven ortamı çalışma döngüsünü gerçek zamanlı deneyimleyin. Gereksinimleri adım adım çözerek yerel GPG kriptografisiyle güvenli oturum açın.</p>
+      </div>
+
+      <!-- Mock Desktop Workspace Container -->
+      <div class="mock-desktop" id="mock-desktop">
+        
+        <!-- Interactive Desktop Workspace Area -->
+        <div class="desktop-workspace">
+          
+          <!-- Window 1: Main Browser Window -->
+          <div class="desktop-window browser-window" id="win-main-browser">
+            <div class="mock-browser-header">
+              <div class="mock-browser-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="mock-browser-address-bar">
+                <i class="fas fa-lock"></i>
+                <span>https://console.acme.corp/login</span>
+              </div>
+              <div class="mock-browser-actions">
+                <!-- Aegis Extension Status Icon in Browser Toolbar -->
+                <div class="extension-icon-wrapper" id="sim-toolbar-ext" title="Aegis HTTP Extension Status">
+                  <img src="assets/icon128.png" alt="Aegis" style="width: 18px; height: 18px; object-fit: contain;">
+                  <span class="status-indicator red"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mock-browser-viewport">
+              <!-- Website Login Card -->
+              <div class="mock-card-container">
+                <div class="mock-login-card" id="sim-login-card" style="background:#ffffff; color:#1c1c1e; border-radius:12px; padding:24px 20px; box-shadow:0 8px 24px rgba(0,0,0,0.15); width:100%;">
+                  <div class="login-card-header">
+                    <div class="brand-logo"><i class="fas fa-shield-alt"></i> Acme Konsolu</div>
+                    <h2 id="sim-card-title">Oturum Aç</h2>
+                    <p id="sim-card-description">Sıfır-Güven geliştirici erişim geçidi.</p>
+                  </div>
+                  <div class="login-form-group">
+                    <label>E-posta Adresi</label>
+                    <input type="text" class="login-input" value="developer@acme.corp" readonly>
+                  </div>
+                  <div class="login-form-group" style="margin-bottom:14px;">
+                    <label>Şifre</label>
+                    <input type="password" class="login-input" value="••••••••••••" readonly>
+                  </div>
+                  <button class="btn-login-submit" disabled>Giriş Yap</button>
+                  <div class="login-divider"><span>veya Aegis ile güvenli</span></div>
+                  <button class="btn-gpg-login" id="btn-sim-action">
+                    <i class="fas fa-key"></i> GPG Anahtarı ile Giriş Yap
+                  </button>
+                </div>
+
+                <!-- Alert Overlay for Missing Extension (Constrained to Card) -->
+                <div class="mock-alert-overlay" id="sim-alert-extension">
+                  <div class="mock-alert-box">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <h3>Aegis HTTP Eklentisi Bulunamadı! * <span class="required-badge">Zorunlu</span></h3>
+                    <p>Ağ isteklerini yakalamak ve anahtar keşfini yönetmek için Aegis web eklentisi gereklidir. Devam etmek için lütfen eklentiyi kurun.</p>
+                    <button class="btn-primary" id="btn-install-ext" style="background: #d93856; border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer;">Eklentiyi Kur</button>
+                  </div>
+                </div>
+
+                <!-- Alert Overlay for Missing Native Host (Constrained to Card) -->
+                <div class="mock-alert-overlay" id="sim-alert-native">
+                  <div class="mock-alert-box">
+                    <div class="alert-icon"><i class="fas fa-plug"></i></div>
+                    <h3>Aegis HTTP Native Host Eksik! * <span class="required-badge">Zorunlu</span></h3>
+                    <p>Eklenti kurulu fakat işletim sisteminizde çalışan yerel Rust Native Messaging servisi (daemon) bulunamadı. Yerel GPG binary sistemi ile haberleşmek için bu servisin kurulu olması gerekir.</p>
+                    <button class="btn-primary" id="btn-install-native" style="background: #d93856; border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer;">Native Host'u Kur (Rust Daemon)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pinentry Dialog Overlay (Centered in Viewport) -->
+              <div class="sim-pinentry-dialog" id="sim-pinentry-box">
+                <div class="sim-pinentry-header">
+                  <span>PINENTRY - GPG PAROLASI</span>
+                  <span class="user-id">USER@MAIL.TDL</span>
+                </div>
+                <div class="sim-pinentry-body">
+                  <p>GPG Gizli Anahtarını açmak için parolayı girin:</p>
+                  <input type="password" id="sim-pinentry-input-field" class="sim-pinentry-input" readonly placeholder="">
+                  <div class="sim-pinentry-buttons">
+                    <button class="btn-cancel" id="btn-sim-pin-cancel">İptal</button>
+                    <button class="btn-ok" id="btn-sim-pin-ok">Tamam</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Success Modal Overlay -->
+              <div class="mock-alert-overlay" id="sim-success-box">
+                <div class="mock-alert-box success">
+                  <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+                  <h3>Giriş Başarılı!</h3>
+                  <p>İmza, Caddy Gateway tarafından başarıyla doğrulandı. İstemciye şifreli oturum JWT jetonu teslim edildi.</p>
+                  <div class="sim-json-output">
+                    <pre style="margin:0;"><code style="white-space: pre-wrap;">{
+  "status": "success",
+  "sessionToken": "gpg_session_92834b...",
+  "user": "user@mail.tdl"
+}</code></pre>
+                  </div>
+                  <button class="btn-primary" id="btn-sim-reset" style="background: var(--gradient-primary); border: none; font-weight: 600; padding: 10px 20px; border-radius: 6px; color: #fff; cursor: pointer; margin-top: 15px;">Simülatörü Sıfırla</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Window 2: Chrome Web Store Window (Separate Web Browser) -->
+          <div class="desktop-window store-window" id="win-web-store">
+            <div class="mock-browser-header">
+              <div class="mock-browser-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="mock-browser-address-bar">
+                <i class="fas fa-lock"></i>
+                <span>https://chrome.google.com/webstore/detail/aegis-http</span>
+              </div>
+            </div>
+            <div class="store-window-body" style="background: #f8f9fa; color: #202124; flex-grow: 1; padding: 16px; overflow-y: auto;">
+              <div class="extension-detail-row" style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+                <img src="assets/icon128.png" alt="Aegis" style="width: 40px; height: 40px; border-radius: 8px; object-fit: contain;">
+                <div class="ext-info-block" style="text-align: left;">
+                  <h4 style="margin:0; font-size:1rem; color:#202124;">Aegis HTTP</h4>
+                  <p class="ext-author" style="margin:2px 0 0 0; font-size:0.75rem; color:#5f6368;">Sunan: aegis-http.org</p>
+                </div>
+                <button class="btn-store-add" id="btn-store-add-sim" style="background: #1a73e8; color: #fff; border: none; font-weight: 600; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-left: auto; font-size:0.8rem;">Chrome'a Ekle</button>
+              </div>
+              <div class="store-screenshots" style="background:#f1f3f4; border:1px solid #dadce0; border-radius:6px; height:120px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;">
+                <i class="fas fa-image" style="font-size: 1.5rem; color: #ced4da;"></i>
+                <span style="color: #70757a; font-size: 0.75rem;">Aegis Güvenli E2E Tünelleme Demosu</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Window 3: Terminal Window (OS Level Window) -->
+          <div class="desktop-window terminal-window" id="win-terminal">
+            <div class="os-window-header">
+              <div class="os-window-dots">
+                <span class="dot-red" style="background:#ff5f56; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-yellow" style="background:#ffbd2e; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-green" style="background:#27c93f; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+              </div>
+              <div class="os-window-title">bash - setup-native-host.sh</div>
+              <div style="width: 24px;"></div>
+            </div>
+            <div class="terminal-window-body" id="sim-terminal-text" style="background: #150115; color: #4af626; font-family: 'Courier New', Courier, monospace; padding: 12px; flex-grow: 1; font-size: 0.75rem; line-height: 1.4; overflow-y: auto; text-align: left; height: calc(100% - 30px);">
+              <!-- Lines printed dynamically -->
+            </div>
+          </div>
+
+          <!-- Window 4: Ubuntu Software Center Window (OS Level Window) -->
+          <div class="desktop-window ubuntu-window" id="win-ubuntu-software">
+            <div class="os-window-header ubuntu-header" style="background: #3d3d3d; border-bottom: 1px solid #222;">
+              <div class="os-window-dots">
+                <span class="dot-red" style="background:#ff5f56; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-yellow" style="background:#ffbd2e; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+                <span class="dot-green" style="background:#27c93f; width:8px; height:8px; border-radius:50%; display:inline-block;"></span>
+              </div>
+              <div class="os-window-title" style="color: #fff;">Ubuntu Yazılım</div>
+              <div style="width: 24px;"></div>
+            </div>
+            <div class="ubuntu-window-body" style="background: #2c2c2e; padding: 15px; color: #fff; text-align: left; height: calc(100% - 30px); display: flex; flex-direction: column;">
+              <div class="ubuntu-store-card" style="display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                <img src="assets/icon128.png" alt="Aegis" style="width: 36px; height: 36px; border-radius: 6px; object-fit: contain;">
+                <div class="ubuntu-store-info">
+                  <h4 style="margin: 0; font-size: 0.9rem; color: #fff;">aegis-native-host</h4>
+                  <p style="margin: 2px 0 0 0; font-size: 0.7rem; color: #a9a9a9;">Yayıncı: Aegis Projesi</p>
+                </div>
+              </div>
+              <div style="font-size: 0.75rem; color: #ddd; margin-bottom: 10px;">Tarayıcı ile GPG arasında güvenli haberleşme sağlayan yerel arka plan servisi (daemon).</div>
+              <button class="btn-ubuntu-install" id="btn-ubuntu-install-sim" style="background: #e95420; color: #fff; border: none; padding: 6px 12px; font-weight: 600; border-radius: 4px; cursor: pointer; font-size: 0.75rem; align-self: flex-start;">Yükle</button>
+              <div class="ubuntu-progress-track" id="ubuntu-progress-track" style="margin-top: 15px; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; display: none; overflow: hidden;">
+                <div class="ubuntu-progress-bar" id="ubuntu-progress-bar" style="background: #e95420; width: 0%; height: 100%; transition: width 0.2s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Mock Mouse Cursor on Desktop Level -->
+          <div id="mock-cursor" class="mock-cursor" style="left: 45%; top: 25%;"><i class="fas fa-mouse-pointer"></i></div>
+        </div>
+
+        <!-- Simulator Video Controls player bar -->
+        <div class="sim-video-controls">
+          <button class="ctrl-btn" id="ctrl-play-pause" title="Oynat/Duraklat"><i class="fas fa-pause"></i></button>
+          <button class="ctrl-btn" id="ctrl-restart" title="Sıfırla"><i class="fas fa-redo"></i></button>
+          <div class="ctrl-progress-container" id="ctrl-progress-container">
+            <div class="ctrl-progress-track">
+              <div class="ctrl-progress-bar" id="ctrl-progress-bar"></div>
+            </div>
+          </div>
+          <span class="ctrl-timer" id="ctrl-timer">00:00 / 00:33</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ecosystem Section -->
+  <section id="ecosystem" class="ecosystem-section" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Ekosistem ve Depolar</h2>
+        <p>Aegis HTTP uçtan uca şifreli mimariyi oluşturan resmi kütüphaneleri ve araçları keşfedin.</p>
+      </div>
+
+      <div class="grid-3">
+        <!-- Card 1 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-shield-alt"></i></div>
+            <h3>Eklentiler ve Servisler</h3>
+          </div>
+          <p>Trafiği yakalayan ve şifreleme işlevlerini işletim sisteminin yerel GPG servisine köprüleyen tarayıcı eklentileri.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>google-chrome-extension</span>
+              <a href="https://github.com/AegisHttp/google-chrome-extension" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>firefox-extension</span>
+              <a href="https://github.com/AegisHttp/firefox-extension" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>native-host-rust</span>
+              <a href="https://github.com/AegisHttp/native-host-rust" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-cubes"></i></div>
+            <h3>Ön Yüz SDK'ları</h3>
+          </div>
+          <p>Aegis eklentisinin kurulu olup olmadığını doğrulayan, bağlantı ayarlarını yöneten ve sıfır-yapılandırma ile istemci durumunu alan tak-çalıştır kütüphaneler.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>aegis-ts-sdk</span>
+              <a href="https://github.com/AegisHttp/aegis-ts-sdk" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>flutter</span>
+              <a href="https://github.com/AegisHttp/flutter" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-network-wired"></i></div>
+            <h3>Arka Uç Middleware Modülleri</h3>
+          </div>
+          <p>Popüler uygulama çatısı sunucularında şifre çözme filtreleri çalıştıran tak-çalıştır modüller.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>gofiber-aegis-http</span>
+              <a href="https://github.com/AegisHttp/gofiber-aegis-http" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item">
+              <span>rust-tokio</span>
+              <a href="https://github.com/AegisHttp/rust-tokio" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-flask</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-django</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>python-fastapi</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>express-middleware</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon"><i class="fas fa-server"></i></div>
+            <h3>Web Sunucuları</h3>
+          </div>
+          <p>Ağ geçidi veya ters vekil (reverse proxy) katmanında şeffaf uçtan uca şifreleme/deşifreleme sağlayan sunucu eklentileri.</p>
+          <div class="ecosystem-links">
+            <div class="ecosystem-item">
+              <span>caddy-module</span>
+              <a href="https://github.com/AegisHttp/caddy-module" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>nginx-module</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+            <div class="ecosystem-item disabled">
+              <span>apache-module</span>
+              <span class="coming-soon-badge">yakında</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Security Section -->
+  <section id="security">
+    <div class="container">
+      <div class="section-header">
+        <h2>Çözülen Güvenlik Açıkları</h2>
+        <p>Aegis, modern web mimarilerini tehdit eden en kritik saldırı vektörlerine karşı matematiksel ve mimari koruma sağlar.</p>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 50px;">
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-danger);"><i class="fas fa-user-secret"></i></div>
+            <h3>XSS (Cross-Site Scripting) ile Anahtar Hırsızlığı</h3>
+          </div>
+          <p>Standart web cüzdanları veya şifreleme çözümlerinde gizli anahtarlar localStorage veya JS Heap bellek alanlarında tutulur. Sayfaya sızan bir XSS atağı bu anahtarları saniyeler içinde çalabilir. Aegis ise anahtarları işletim sistemi seviyesindeki GPG anahtarlığına gömerek zararlı betiklerden tamamen izole eder.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-warning);"><i class="fas fa-compress-alt"></i></div>
+            <h3>MitM (Ortadaki Adam) & TLS Kırılması</h3>
+          </div>
+          <p>Kurumsal ağ geçitleri veya saldırganlar SSL/TLS sertifikalarını taklit etse ya da HTTPS katmanını tamamen deşifre etse dahi, Aegis üzerinden taşınan paketler zırhlı AES-256 PGP blokları olarak hareket eder. Veriyi sadece hedef sunucu çözebilir.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-accent);"><i class="fas fa-sync-alt"></i></div>
+            <h3>Tekrar Oynatma Saldırıları (Replay)</h3>
+          </div>
+          <p>Sunucuya gönderilen her şifreli paket, ISO8601 zaman damgası ve benzersiz bir UUID nonce (`_gpg_nonce`) ile mühürlenir. Backend bu nonceları kısa süreli bir TTL cache yapısında denetleyerek mükerrer istekleri anında reddeder.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-success);"><i class="fas fa-database"></i></div>
+            <h3>DOM Decryption Oracle İstismarı</h3>
+          </div>
+          <p>Sayfaya sızan kötü niyetli XSS betiklerinin, eklentiyi şifre çözücü (oracle) olarak kullanarak hassas verileri gizlice açmasını önlemek amacıyla; Aegis, sadece fiziksel onay ekranı (pinentry) ile üretilen kısa ömürlü, hafıza sınırlandırılmış `x-gpg-session-token` jetonları kullanır.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-primary);"><i class="fas fa-file-signature"></i></div>
+            <h3>Tüm HTTP Header ve JWT Koruması</h3>
+          </div>
+          <p>Sadece veri gövdesini şifreleyen geleneksel uygulama düzeyindeki şifrelemelerin aksine Aegis, HTTP istek zarfının tamamını (örneğin <code>Authorization: Bearer JWT</code> gibi özel başlıkları) şifreler. Bu sayede oturum jetonlarınız, kurumsal proxy incelemelerinden ve pasif ağ dinlemelerinden mutlak şekilde korunur.</p>
+        </div>
+        <div class="card">
+          <div class="card-header-row">
+            <div class="card-icon" style="color: var(--color-accent);"><i class="fas fa-user-shield"></i></div>
+            <h3>Zararlı Eklenti ve Arka Plan Tarama Direnci</h3>
+          </div>
+          <p>Kullanıcının tarayıcısına sızan zararlı bir eklenti veya bilgisayara yerleşen bir Trojan, kullanıcının açık oturumunu (session cookies) kullanarak arka planda istekleri dinlemeye veya taklit etmeye çalışsa bile başarılı olamaz. Hatta Developer Tools (Geliştirici Araçları) üzerinden Network (Ağ) sekmesi izlense dahi, aradaki tüm HTTP istek ve yanıtları yalnızca GPG şifreli (şifreli metin) olarak görülür. Düz metin verisi tarayıcı dışındaki güvenli bölge haricinde asla ele geçirilemez.</p>
+        </div>
+      </div>
+
+      <!-- Comparative Table -->
+      <div class="section-header" style="margin-top: 80px; margin-bottom: 40px;">
+        <h3>Karşılaştırma Matrisi</h3>
+        <p>Aegis'in geleneksel REST güvenlik mekanizmalarıyla kıyaslanması</p>
+      </div>
+
+      <div class="matrix-wrapper">
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>Güvenlik Kriteri</th>
+              <th>Klasik HTTPS / TLS</th>
+              <th>HTTPS + Ön Yüz JS Şifreleme</th>
+              <th class="matrix-highlight">Aegis GPG Ağ Geçidi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>MitM ve TLS Vekil Gözetimi</td>
+              <td><i class="fas fa-times cross"></i> Korumasız</td>
+              <td><i class="fas fa-check check"></i> Korumalı</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Korumalı</td>
+            </tr>
+            <tr>
+              <td>XSS ile Gizli Anahtar Çalınması</td>
+              <td>Ugulanamaz (Anahtar yok)</td>
+              <td><i class="fas fa-times cross"></i> Yüksek Risk (Tarayıcı belleği)</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Bağışık (İşletim Sisteminde İzole)</td>
+            </tr>
+            <tr>
+              <td>Tedarik Zinciri (NPM) İstismarı</td>
+              <td><i class="fas fa-times cross"></i> Korumasız</td>
+              <td><i class="fas fa-times cross"></i> Korumasız (Script manipüle edilebilir)</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Korumalı (Network Portunda Yakalanır)</td>
+            </tr>
+            <tr>
+              <td>Decryption Oracle Koruması</td>
+              <td>Uygulanamaz</td>
+              <td><i class="fas fa-times cross"></i> Hayır</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Evet (Kullanıcı etkileşimli session jetonları)</td>
+            </tr>
+            <tr>
+              <td>GET / DELETE URL Veri Sızıntısı</td>
+              <td><i class="fas fa-times cross"></i> Loglarda Açıkça Görünür</td>
+              <td><i class="fas fa-times cross"></i> Loglarda Açıkça Görünür</td>
+              <td class="matrix-highlight"><i class="fas fa-check check"></i> Şifreli (POST / Üzerinden Saydam Tünelleme)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Playbook Code Section -->
+  <section id="playbook" style="background: var(--bg-secondary);">
+    <div class="container">
+      <div class="section-header">
+        <h2>Geliştirici Kılavuzu</h2>
+        <p>Aegis'i mevcut projenize kolayca entegre edin. Ön yüz geliştiriciler standart fetch kodları yazarken, arka uç middlewares gelen paketleri şeffafça çözer.</p>
+      </div>
+
+      <div class="playbook-container">
+        <div class="playbook-tabs">
+          <div class="tab-group-title">İstemci Tarafı SDK</div>
+          <button class="playbook-tab active" data-tab="js-sdk">
+            <i class="fab fa-js"></i> TypeScript/JS SDK
+          </button>
+          
+          <div class="tab-group-title">Sunucu Middleware Katmanı</div>
+          <button class="playbook-tab" data-tab="gofiber">
+            <i class="fab fa-golang"></i> GoFiber Middleware
+          </button>
+          <button class="playbook-tab" data-tab="rust-axum">
+            <i class="fas fa-cubes"></i> Axum / Tokio (Rust)
+          </button>
+
+          <div class="tab-group-title">Ağ Geçidi / Web Sunucusu</div>
+          <button class="playbook-tab" data-tab="caddy">
+            <i class="fas fa-server"></i> Caddy Gateway
+          </button>
+        </div>
+
+        <div class="playbook-content">
+          <!-- Panel 1: JS SDK -->
+          <div class="playbook-panel active" id="js-sdk">
+            <h3>TypeScript İstemci Kurulumu</h3>
+            <p>Ağ isteklerini otomatik yakalayan ve oturum döngüsünü yöneten proxy yapısını başlatın.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">aegis-app.ts</div>
+                <button class="btn-copy">Kopyala</button>
+              </div>
+              <pre><code class="language-typescript">import { AegisClient } from 'aegis-ts-sdk';
+
+// Aegis istemci proxy kancasını kurun
+const aegis = new AegisClient({
+  serverPublicKeyUrl: 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xServerKeyID',
+  forceTunneling: true // GET/DELETE metot ve başlıklarını şifreli POST gövdesine hapseder
+});
+
+// OS anahtarlığındaki GPG imzasıyla otonom kimlik doğrulaması gerçekleştirin
+await aegis.login();
+
+// Standart fetch çağrılarınızı yazın - veriler arka planda şeffafça şifrelenir!
+const response = await fetch('/api/secure-profile', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    SSN: "000-12-3456",
+    balance: 92834.12
+  })
+});
+
+const data = await response.json();
+console.log('Sunucudan gelen deşifre edilmiş yanıt:', data);</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 2: GoFiber -->
+          <div class="playbook-panel" id="gofiber">
+            <h3>GoFiber Middleware Yapılandırması</h3>
+            <p>GPG şifre çözme filtresini uygulamanıza entegre edin. Standart Go controller'larınız veriyi sade JSON olarak işler.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">main.go</div>
+                <button class="btn-copy">Kopyala</button>
+              </div>
+              <pre><code class="language-go">package main
+
+import (
+	"github.com/AegisHttp/gofiber-aegis-http"
+	"github.com/gofiber/fiber/v2"
+)
+
+func main() {
+	app := fiber.New()
+
+	// Aegis Şifre Çözme Middleware'ini global olarak enjekte edin
+	app.Use(aegis.New(aegis.Config{
+		PrivateKeyRingPath: "/home/server/.gnupg/secring.gpg",
+		PrivateKeyPassphrase: "SuperSecretBackendPassphrase",
+		KeyserverPublish: true, // Sunucu public anahtarını otomatik olarak Ubuntu sunucularına yükler
+	}))
+
+	// Standart yönlendirmeleriniz çözülmüş JSON içeriğiyle çalışmaya devam eder
+	app.Post("/api/secure-profile", func(c *fiber.Ctx) error {
+		type RequestData struct {
+			SSN     string  `json:"SSN"`
+			Balance float64 `json:"balance"`
+		}
+
+		var req RequestData
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).SendString(err.Error())
+		}
+
+		return c.JSON(fiber.Map{
+			"status": "success",
+			"message": "Güvenli veri başarıyla işlendi",
+		})
+	})
+
+	app.Listen(":8080")
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 3: Rust Axum -->
+          <div class="playbook-panel" id="rust-axum">
+            <h3>Rust Tokio / Axum Handler</h3>
+            <p>Yüksek performanslı Rust servisleri için GPG decryption katmanını Axum pipeline'ına dahil edin.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">main.rs</div>
+                <button class="btn-copy">Kopyala</button>
+              </div>
+              <pre><code class="language-rust">use axum::{routing::post, Json, Router};
+use aegis_tokio::DecryptLayer;
+use serde::{Deserialize, Serialize};
+
+#[derive(Deserialize)]
+struct ProfileRequest {
+    ssn: String,
+    balance: f64,
+}
+
+#[derive(Serialize)]
+struct ProfileResponse {
+    status: String,
+}
+
+async fn handle_profile(Json(payload): Json<ProfileRequest>) -> Json<ProfileResponse> {
+    // Şifresi otomatik çözülmüş payload'u güvenle işleyin
+    Json(ProfileResponse {
+        status: format!("Kimlik uzunluğu işlendi: {}", payload.ssn.len()),
+    })
+}
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new()
+        .route("/api/secure-profile", post(handle_profile))
+        .layer(DecryptLayer::new("/etc/aegis/server_private.key"));
+
+    axum::Server::bind(&"0.0.0.0:8080".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}</code></pre>
+            </div>
+          </div>
+
+          <!-- Panel 4: Caddy Middleware -->
+          <div class="playbook-panel" id="caddy">
+            <h3>Caddy Middleware Yapılandırması</h3>
+            <p>Şifre çözme ve şifreleme işlemlerini doğrudan Caddy ters vekil (reverse proxy) katmanında gerçekleştirin. Herhangi bir dilde yazılmış arka ucunuzu anında Sıfır-Güven uyumlu hale getirin.</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">Caddyfile</div>
+                <button class="btn-copy">Kopyala</button>
+              </div>
+              <pre><code class="language-nginx">{
+    order aegis_http before reverse_proxy
+}
+
+:8080 {
+    # Aegis işlemcisi içeren yönlendirme bloğu
+    route {
+        aegis_http {
+            challenge_path /api/challenge
+            login_path /api/login
+            decrypt_requests
+            encrypt_responses
+            require_keyserver
+            check_revocation
+            tunneling_enabled
+            server_email "api@example.com"
+            server_passphrase "secret"
+            server_private_key_path "/etc/caddy/server_private.asc"
+            server_public_key_path "/etc/caddy/server_public.asc"
+        }
+
+        # Çözülmüş trafiği şeffaf şekilde standart backend'e iletir
+        reverse_proxy localhost:3000
+    }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Get Started / Run Section -->
+  <section id="get-started">
+    <div class="container">
+      <div class="section-header">
+        <h2>Hızlı Başlangıç ve Çalıştırma</h2>
+        <p>Ortamınızı yapılandırmak ve Aegis'i yerelinizde test etmek için aşağıdaki adımları izleyin.</p>
+      </div>
+
+      <div class="steps-container">
+        <!-- Step 1 -->
+        <div class="step-item">
+          <div class="step-number">1</div>
+          <div class="step-body">
+            <h3>Yerel Daemon Servisini Yükleyin ve Kaydedin (Native Messaging Host)</h3>
+            <p>Native host, tarayıcı eklentisinin işletim sisteminizdeki GPG anahtarlığıyla güvenle konuşmasını sağlayan bir köprüdür. Platformunuza uygun yükleyiciyi seçin:</p>
+            
+            <div style="margin-top: 1rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+              <div>
+                <strong><i class="fab fa-windows"></i> Windows:</strong> <a href="https://github.com/AegisHttp/pre-native-host/releases" target="_blank">Resmi Releases sayfasından</a> derlenmiş hazır <code>aegis-native-host.exe</code> kurulum dosyasını indirin.
+              </div>
+              <div>
+                <strong><i class="fab fa-apple"></i> macOS:</strong> Homebrew tap deposu üzerinden yükleyin:
+                <div class="code-window" style="margin-top: 6px;">
+                  <div class="code-header">
+                    <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                    <div class="code-filename">Homebrew</div>
+                    <button class="btn-copy">Kopyala</button>
+                  </div>
+                  <pre><code>brew install aegishttp/tap/aegis-native-host</code></pre>
+                </div>
+              </div>
+              <div>
+                <strong><i class="fab fa-linux"></i> Linux:</strong>
+                <ul style="margin-left: 1.5rem; margin-top: 6px; list-style-type: square; color: var(--text-secondary); display: flex; flex-direction: column; gap: 1rem;">
+                  <li><strong>Ubuntu / Debian (APT PPA):</strong> Resmi PPA'dan yükleyin:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Kopyala</button>
+                      </div>
+                      <pre><code class="language-bash">sudo add-apt-repository ppa:aegis-http/stable
+sudo apt update
+sudo apt install aegis-native-host</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Snap Store (Tüm dağıtımlar):</strong> Snap ile yükleyin:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Kopyala</button>
+                      </div>
+                      <pre><code class="language-bash">sudo snap install aegis-native-host</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Arch Linux (AUR):</strong> AUR paketini yükleyin:
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Kopyala</button>
+                      </div>
+                      <pre><code class="language-bash">yay -S aegis-native-host-bin</code></pre>
+                    </div>
+                  </li>
+                  <li><strong>Kaynaktan Derleme:</strong>
+                    <div class="code-window" style="margin-top: 6px;">
+                      <div class="code-header">
+                        <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                        <div class="code-filename">Terminal</div>
+                        <button class="btn-copy">Kopyala</button>
+                      </div>
+                      <pre><code class="language-bash">git clone https://github.com/AegisHttp/native-host-rust.git
+cd native-host-rust
+chmod +x install.sh
+./install.sh</code></pre>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-item">
+          <div class="step-number">2</div>
+          <div class="step-body">
+            <h3>Tarayıcı Eklentisini Yükleyin</h3>
+            <p>Resmi <strong>Aegis HTTP</strong> tarayıcı eklentisini doğrudan tarayıcınızın eklenti mağazasından indirin:</p>
+            <ul style="margin-left: 1.5rem; list-style-type: square; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <li><strong>Chrome / Chromium Tabanlı Tarayıcılar:</strong> <a href="https://chrome.google.com/webstore/detail/aegis-http" target="_blank">Chrome Web Mağazası</a> üzerinden yükleyin ("Aegis HTTP" araması yapın).</li>
+              <li><strong>Firefox Tarayıcısı:</strong> <a href="https://addons.mozilla.org/firefox/addon/aegis-http" target="_blank">Firefox Browser Add-ons</a> üzerinden yükleyin ("Aegis HTTP" araması yapın).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-item">
+          <div class="step-number">3</div>
+          <div class="step-body">
+            <h3>Örnek Servisleri Başlatın</h3>
+            <p>Yerelinizdeki GoFiber sunucusunu ayağa kaldırın ve örnek React arayüzünü çalıştırın:</p>
+            <div class="code-window">
+              <div class="code-header">
+                <div class="code-dots"><div class="code-dot"></div><div class="code-dot"></div><div class="code-dot"></div></div>
+                <div class="code-filename">terminal</div>
+                <button class="btn-copy">Kopyala</button>
+              </div>
+              <pre><code># Terminal 1: Backend'i Başlat
+cd gofiber-aegis-http
+go run main.go
+
+# Terminal 2: React UI Demo Başlat
+cd ../react-frontend
+npm install
+npm run dev</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Special Thanks Section -->
+  <section class="thanks-section" style="padding: 45px 0; border-top: 1px solid var(--border-color); background: var(--bg-primary); text-align: center;">
+    <div class="container">
+      <h3 style="font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 2px;">Teşekkürler</h3>
+      <div style="display: flex; justify-content: center; align-items: center; gap: 4rem; flex-wrap: wrap;">
+        <a href="https://oyd.org.tr/" target="_blank" style="display: flex; align-items: center; filter: grayscale(100%) opacity(0.7); transition: all 0.3s ease;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%) opacity(0.7)'">
+          <img src="https://oyd.org.tr/oyd_logo.svg" alt="Özgür Yazılım Derneği" style="height: 44px; width: auto;">
+        </a>
+        <a href="https://hackerspace.ist/" target="_blank" style="display: flex; align-items: center; filter: grayscale(100%) opacity(0.7); transition: all 0.3s ease;" onmouseover="this.style.filter='none'" onmouseout="this.style.filter='grayscale(100%) opacity(0.7)'">
+          <img src="https://hackerspace.ist/hsist.svg" alt="Hackerspace İstanbul" style="height: 44px; width: auto; filter: brightness(0) invert(1);">
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="#about">Hakkında</a>
+        <a href="#architecture">Mimari</a>
+        <a href="#security">Güvenlik</a>
+        <a href="#playbook">Kod Kılavuzu</a>
+        <a href="https://github.com/AegisHttp" target="_blank">GitHub</a>
+      </div>
+      <p>&copy; 2026 Aegis Projesi. AGPL Lisansı ile yayınlanmıştır.</p>
+    </div>
+  </footer>
+
+  <!-- Logic script -->
+  <script src="assets/app.js"></script>
+  <!-- Syntax Highlighting Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+</body>
+</html>
