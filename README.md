@@ -4,6 +4,8 @@ This repository serves as the central documentation landing page for the **Aegis
 
 👉 **View the live interactive website here:** [Aegis HTTP Gateway Documentation](https://aegishttp.github.io/)
 
+[![Available in the Chrome Web Store](https://developer.chrome.com/docs/webstore/images/ChromeWebStore_Badge_v2_206x58.png)](https://chromewebstore.google.com/detail/lappbcambkogfmigiphapgjcglafcfnd)
+
 ---
 
 ## 🚀 Website Structure
